@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   Business, ScanParams, ScanLog, PipelineStatus 
 } from './types';
-import { LOCATION_PRESETS } from './data/presets';
 import { fetchLiveOSMBusinesses } from './services/overpass';
 
 import { Navbar } from './components/Navbar';
@@ -15,9 +14,9 @@ import { ExportModal } from './components/ExportModal';
 
 export function App() {
   const [params, setParams] = useState<ScanParams>({
-    locationName: LOCATION_PRESETS[0].name,
-    lat: LOCATION_PRESETS[0].lat,
-    lng: LOCATION_PRESETS[0].lng,
+    locationName: 'Sousse, Tunisia',
+    lat: 35.8256,
+    lng: 10.6411,
     radiusKm: 3.0,
     category: 'all',
     minRating: 0,
@@ -41,9 +40,16 @@ export function App() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
 
-  // Initialize with initial live OSM scan on mount
+  // Initialize in idle state without auto-running scan on startup
   useEffect(() => {
-    runLiveScan(params);
+    setLogs([
+      {
+        id: 'init-1',
+        timestamp: new Date().toLocaleTimeString(),
+        message: `BizRadar initialized in idle mode. Search your target city/region (e.g. Sousse, Paris) or use GPS, then click 'Launch Live OSM Scan'.`,
+        type: 'info'
+      }
+    ]);
   }, []);
 
   const runLiveScan = async (scanParams: ScanParams) => {
@@ -179,7 +185,15 @@ export function App() {
         };
         setParams(newParams);
         setIsLocating(false);
-        runLiveScan(newParams);
+        setLogs(prev => [
+          {
+            id: `gps-${Date.now()}`,
+            timestamp: new Date().toLocaleTimeString(),
+            message: `Acquired GPS location: ${lat.toFixed(4)}, ${lng.toFixed(4)}. Click 'Launch Live OSM Scan' to scan.`,
+            type: 'success'
+          },
+          ...prev
+        ]);
       },
       (err) => {
         console.warn(err);
@@ -208,7 +222,18 @@ export function App() {
   };
 
   const handleResetData = () => {
-    runLiveScan(params);
+    setBusinesses([]);
+    setTotalInspected(0);
+    setSkippedCount(0);
+    setTargetsFound(0);
+    setLogs([
+      {
+        id: `reset-${Date.now()}`,
+        timestamp: new Date().toLocaleTimeString(),
+        message: `Lead data cleared. Ready for new scan.`,
+        type: 'info'
+      }
+    ]);
   };
 
   const handleCopyCoordinates = (lat: number, lng: number) => {
@@ -252,7 +277,6 @@ export function App() {
           params={params}
           onChangeParams={(newParams) => {
             setParams(newParams);
-            runLiveScan(newParams);
           }}
           onStartScan={handleStartScan}
           onStopScan={handleStopScan}
@@ -307,7 +331,7 @@ export function App() {
 
       {/* Footer */}
       <footer className="border-t border-slate-800 bg-slate-900/50 py-4 px-4 text-center text-xs text-slate-500 mt-12">
-        <p>BizRadar v2.5 • Exhaustive OpenStreetMap Live Scanner • Dynamic Viewport Fetching & Lead Scoring</p>
+        <p>BizRadar v2.6 • Exhaustive OpenStreetMap Live Scanner • Dynamic Viewport Fetching & Lead Scoring</p>
       </footer>
 
       {/* Modals */}
