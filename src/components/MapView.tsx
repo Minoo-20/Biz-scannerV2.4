@@ -3,22 +3,28 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Business, LeadTier } from '../types';
 import { MapPin, Phone, Star, Copy, ExternalLink, GlobeX, Flame, Sparkles } from 'lucide-react';
+import { CurrencyCode, CURRENCIES } from '../utils/currency';
 
 interface MapViewProps {
   businesses: Business[];
   centerLat: number;
   centerLng: number;
+  currency: CurrencyCode;
   selectedBusinessId?: string;
   onSelectBusiness?: (b: Business) => void;
   onCopyCoordinates: (lat: number, lng: number) => void;
 }
 
 // Controller component to re-center map when center coordinates change
-function MapRecenter({ lat, lng }: { lat: number; lng: number }) {
+function MapRecenter({ lat, lng, selectedBusiness }: { lat: number; lng: number; selectedBusiness?: Business }) {
   const map = useMap();
   useEffect(() => {
-    map.flyTo([lat, lng], 13, { duration: 1.2 });
-  }, [lat, lng, map]);
+    if (selectedBusiness) {
+      map.flyTo([selectedBusiness.lat, selectedBusiness.lng], 16, { duration: 1.2 });
+    } else {
+      map.flyTo([lat, lng], 13, { duration: 1.2 });
+    }
+  }, [lat, lng, selectedBusiness, map]);
   return null;
 }
 
@@ -71,12 +77,14 @@ export const MapView: React.FC<MapViewProps> = ({
   businesses,
   centerLat,
   centerLng,
+  currency,
   selectedBusinessId,
   onSelectBusiness,
   onCopyCoordinates
 }) => {
   // Only plot target businesses (businesses LACKING a website)
   const targetBusinesses = businesses.filter(b => b.status === 'NO_WEBSITE');
+  const selectedBusiness = targetBusinesses.find(b => b.id === selectedBusinessId);
 
   return (
     <div className="relative w-full h-[450px] lg:h-full rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950">
@@ -101,7 +109,7 @@ export const MapView: React.FC<MapViewProps> = ({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <MapRecenter lat={centerLat} lng={centerLng} />
+        <MapRecenter lat={centerLat} lng={centerLng} selectedBusiness={selectedBusiness} />
 
         {targetBusinesses.map((biz) => {
           const isSelected = biz.id === selectedBusinessId;
@@ -112,6 +120,11 @@ export const MapView: React.FC<MapViewProps> = ({
               key={biz.id}
               position={[biz.lat, biz.lng]}
               icon={icon}
+              ref={(marker) => {
+                if (marker && isSelected) {
+                  marker.openPopup();
+                }
+              }}
               eventHandlers={{
                 click: () => onSelectBusiness && onSelectBusiness(biz)
               }}
@@ -144,7 +157,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     <span className="text-slate-400 text-[11px]">Lead Target Score:</span>
                     <span className="font-bold text-emerald-400 flex items-center gap-1">
                       {biz.leadTier === 'HIGH_VAL' && <Flame className="w-3.5 h-3.5 text-amber-400" />}
-                      {biz.leadScore}/100 (${biz.estWebsiteValue.toLocaleString()} Value)
+                      {biz.leadScore}/100 ({biz.estWebsiteValue.toLocaleString()} {CURRENCIES[currency].symbol} Value)
                     </span>
                   </div>
 
@@ -165,7 +178,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
                   {/* Google Maps Business Profile Link */}
                   <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(biz.name + ' ' + (biz.address !== 'Local Business Area' ? biz.address + ' ' : '') + biz.city)}`}
+                    href={`https://www.google.com/maps/search/?api=1&query=${biz.lat},${biz.lng}`}
                     target="_blank"
                     rel="noreferrer"
                     className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs rounded-lg transition-all font-medium"

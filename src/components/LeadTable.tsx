@@ -5,10 +5,13 @@ import {
 } from 'lucide-react';
 import { Business, PipelineStatus, LeadTier } from '../types';
 import { getTierBadgeStyle } from '../utils/scoring';
+import { CurrencyCode, CURRENCIES } from '../utils/currency';
 import confetti from 'canvas-confetti';
 
 interface LeadTableProps {
   leads: Business[];
+  currency: CurrencyCode;
+  selectedBusinessId?: string;
   onCopyCoordinates: (lat: number, lng: number) => void;
   onOpenPitch: (business: Business) => void;
   onUpdateStatus: (id: string, status: PipelineStatus) => void;
@@ -19,6 +22,8 @@ interface LeadTableProps {
 
 export const LeadTable: React.FC<LeadTableProps> = ({
   leads,
+  currency,
+  selectedBusinessId,
   onCopyCoordinates,
   onOpenPitch,
   onUpdateStatus,
@@ -150,9 +155,17 @@ export const LeadTable: React.FC<LeadTableProps> = ({
             <tbody className="divide-y divide-slate-800/60">
               {filtered.map((biz) => {
                 const tierStyle = getTierBadgeStyle(biz.leadTier);
+                const isSelected = biz.id === selectedBusinessId;
 
                 return (
-                  <tr key={biz.id} className="hover:bg-slate-800/40 transition-colors group">
+                  <tr 
+                    key={biz.id} 
+                    className={`transition-all group ${
+                      isSelected 
+                        ? 'bg-emerald-950/50 border-l-4 border-emerald-400 ring-1 ring-emerald-500/30' 
+                        : 'hover:bg-slate-800/40'
+                    }`}
+                  >
                     
                     {/* Business Name & Phone */}
                     <td className="py-3 px-3">
@@ -210,7 +223,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
 
                     {/* Estimated Website Value */}
                     <td className="py-3 px-3 font-bold text-emerald-400 font-mono text-sm">
-                      ${biz.estWebsiteValue.toLocaleString()}
+                      {biz.estWebsiteValue.toLocaleString()} {CURRENCIES[currency].symbol}
                     </td>
 
                     {/* Pipeline Status Dropdown */}
@@ -252,7 +265,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
 
                         {/* Open Google Maps Business Profile */}
                         <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(biz.name + ' ' + (biz.address !== 'Local Business Area' ? biz.address + ' ' : '') + biz.city)}`}
+                          href={`https://www.google.com/maps/search/?api=1&query=${biz.lat},${biz.lng}`}
                           target="_blank"
                           rel="noreferrer"
                           className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-all"
