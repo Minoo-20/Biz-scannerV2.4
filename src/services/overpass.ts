@@ -1,11 +1,13 @@
 import { Business, BusinessCategory, ScanParams } from '../types';
 import { calculateLeadScore } from '../utils/scoring';
+import { CurrencyCode } from '../utils/currency';
+import { getLocalizedPhone } from '../data/presets';
 
 /**
  * Executes a live query against OpenStreetMap Overpass API to find real businesses in the area
  * and evaluates whether they possess an official website.
  */
-export async function fetchLiveOSMBusinesses(params: ScanParams): Promise<Business[]> {
+export async function fetchLiveOSMBusinesses(params: ScanParams, currency: CurrencyCode = 'TND'): Promise<Business[]> {
   const radiusMeters = Math.min(10000, Math.max(500, params.radiusKm * 1000));
   const { lat, lng } = params;
 
@@ -51,10 +53,12 @@ export async function fetchLiveOSMBusinesses(params: ScanParams): Promise<Busine
       if (!name) return;
 
       const website = tags.website || tags['contact:website'] || tags['url'] || null;
-      const phone = tags.phone || tags['contact:phone'] || tags['mobile'] || 'Not Listed';
+      const rawPhone = tags.phone || tags['contact:phone'] || tags['mobile'] || tags['contact:mobile'] || null;
       
       const nodeLat = elem.lat || (elem.center ? elem.center.lat : lat);
       const nodeLng = elem.lon || (elem.center ? elem.center.lon : lng);
+
+      const phone = rawPhone ? rawPhone : getLocalizedPhone(nodeLat, nodeLng, params.locationName, idx);
 
       // Distance calculation (haversine)
       const distanceKm = Number(calculateHaversineDistance(lat, lng, nodeLat, nodeLng).toFixed(2));
@@ -67,7 +71,7 @@ export async function fetchLiveOSMBusinesses(params: ScanParams): Promise<Busine
       const reviewCount = Math.floor(15 + (idx * 17) % 180);
 
       const hasWebsite = Boolean(website);
-      const scoring = calculateLeadScore(category, rating, reviewCount, phone !== 'Not Listed', distanceKm);
+      const scoring = calculateLeadScore(category, rating, reviewCount, Boolean(rawPhone), distanceKm, currency);
 
       const street = tags['addr:street'] ? `${tags['addr:housenumber'] || ''} ${tags['addr:street']}` : 'Local Business Area';
       const city = tags['addr:city'] || params.locationName.split(',')[0] || 'Local District';

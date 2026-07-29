@@ -1,10 +1,12 @@
 import React from 'react';
 import { Radar, Target, DollarSign, Download, Sparkles, MapPin, RefreshCw } from 'lucide-react';
 import { Business } from '../types';
+import { CurrencyCode, CURRENCIES } from '../utils/currency';
 
 interface NavbarProps {
   discoveredLeads: Business[];
   isScanning: boolean;
+  currency: CurrencyCode;
   onOpenExport: () => void;
   onResetData: () => void;
 }
@@ -12,6 +14,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   discoveredLeads,
   isScanning,
+  currency,
   onOpenExport,
   onResetData
 }) => {
@@ -84,7 +87,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div>
               <p className="text-[10px] text-slate-400 font-medium">Potential Website Revenue</p>
               <span className="text-sm font-bold text-emerald-400">
-                ${totalPipelineValue.toLocaleString()}
+                {totalPipelineValue.toLocaleString()} {CURRENCIES[currency].symbol}
               </span>
             </div>
           </div>

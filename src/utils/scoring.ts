@@ -1,4 +1,5 @@
 import { BusinessCategory, LeadTier } from '../types';
+import { CurrencyCode, getRegionalEstValue } from './currency';
 
 export interface ScoreBreakdown {
   score: number;
@@ -16,7 +17,8 @@ export function calculateLeadScore(
   rating: number,
   reviewCount: number,
   hasPhone: boolean,
-  distanceKm: number
+  distanceKm: number,
+  currency: CurrencyCode = 'TND'
 ): ScoreBreakdown {
   let score = 0;
   const reasons: string[] = [];
@@ -93,17 +95,15 @@ export function calculateLeadScore(
   // Cap score at 99
   const finalScore = Math.min(99, Math.max(15, Math.round(score)));
 
-  // Determine Tier & Estimated Deal Value
+  // Determine Tier & Regional PPP Estimated Deal Value
   let tier: LeadTier = 'STANDARD';
-  let estWebsiteValue = 1800;
-
   if (finalScore >= 75) {
     tier = 'HIGH_VAL';
-    estWebsiteValue = category === 'legal_finance' || category === 'health_medical' ? 5500 : 3800;
   } else if (finalScore >= 50) {
     tier = 'MEDIUM_VAL';
-    estWebsiteValue = 2600;
   }
+
+  const estWebsiteValue = getRegionalEstValue(tier, category, currency);
 
   return {
     score: finalScore,

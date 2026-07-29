@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { X, Copy, Check, MessageSquareText, Phone, Mail, Sparkles, Send, GlobeX } from 'lucide-react';
 import { Business } from '../types';
+import { CurrencyCode, CURRENCIES } from '../utils/currency';
 
 interface PitchModalProps {
   business: Business | null;
+  currency: CurrencyCode;
   onClose: () => void;
 }
 
-export const PitchModal: React.FC<PitchModalProps> = ({ business, onClose }) => {
+export const PitchModal: React.FC<PitchModalProps> = ({ business, currency, onClose }) => {
   if (!business) return null;
 
   const [activeTab, setActiveTab] = useState<'phone' | 'email' | 'sms'>('phone');
@@ -20,7 +22,7 @@ My name is [Your Name]. I was searching for top-rated ${business.categoryLabel.t
 
 However, when customers click to visit your website from Google Maps, there's no website listed! Right now, over 60% of people looking for a ${business.categoryLabel.toLowerCase()} in ${business.city} leave and go to competitors if they can't view a website.
 
-We build modern, fast-loading websites for local businesses starting at $${business.estWebsiteValue.toLocaleString()}. I'd love to send over a free custom design preview for ${business.name}. 
+We build modern, fast-loading websites for local businesses starting at ${business.estWebsiteValue.toLocaleString()} ${CURRENCIES[currency].symbol}. I'd love to send over a free custom design preview for ${business.name}. 
 
 What's the best email address to send that over to?`;
 
@@ -99,7 +101,7 @@ Coordinates verified: ${business.lat.toFixed(5)}, ${business.lng.toFixed(5)}`;
           </div>
           <div>
             <p className="text-[10px] text-slate-500">Est. Website Deal</p>
-            <p className="font-semibold text-emerald-400 font-mono">${business.estWebsiteValue.toLocaleString()}</p>
+            <p className="font-semibold text-emerald-400 font-mono">{business.estWebsiteValue.toLocaleString()} {CURRENCIES[currency].symbol}</p>
           </div>
           <div>
             <p className="text-[10px] text-slate-500">Phone</p>

@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
 import { X, Download, FileSpreadsheet, FileCode, Check } from 'lucide-react';
 import { Business } from '../types';
+import { CurrencyCode, CURRENCIES } from '../utils/currency';
 
 interface ExportModalProps {
   leads: Business[];
+  currency: CurrencyCode;
   onClose: () => void;
 }
 
-export const ExportModal: React.FC<ExportModalProps> = ({ leads, onClose }) => {
+export const ExportModal: React.FC<ExportModalProps> = ({ leads, currency, onClose }) => {
   const targetLeads = leads.filter(b => b.status === 'NO_WEBSITE');
   const [format, setFormat] = useState<'csv' | 'json'>('csv');
   const [downloaded, setDownloaded] = useState(false);
 
   const handleDownload = () => {
     if (format === 'csv') {
-      const headers = ['Business Name', 'Category', 'Phone', 'Latitude', 'Longitude', 'City', 'Address', 'Rating', 'Reviews', 'Lead Score', 'Lead Tier', 'Est Website Value ($)', 'Pipeline Status'];
+      const headers = ['Business Name', 'Category', 'Phone', 'Latitude', 'Longitude', 'City', 'Address', 'Rating', 'Reviews', 'Lead Score', 'Lead Tier', `Est Website Value (${CURRENCIES[currency].code})`, 'Pipeline Status'];
       const rows = targetLeads.map(b => [
         `"${b.name.replace(/"/g, '""')}"`,
         `"${b.categoryLabel}"`,
