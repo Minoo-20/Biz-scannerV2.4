@@ -1,7 +1,6 @@
 import { Business, BusinessCategory, ScanParams } from '../types';
 import { calculateLeadScore } from '../utils/scoring';
 import { CurrencyCode } from '../utils/currency';
-import { getLocalizedPhone } from '../data/presets';
 
 /**
  * Executes a live query against OpenStreetMap Overpass API to find real businesses in the area
@@ -43,6 +42,7 @@ export async function fetchLiveOSMBusinesses(params: ScanParams, currency: Curre
     const data = await response.json();
     const elements = data.elements || [];
 
+    const seen = new Set<string>();
     const results: Business[] = [];
 
     elements.forEach((elem: any, idx: number) => {
@@ -52,13 +52,17 @@ export async function fetchLiveOSMBusinesses(params: ScanParams, currency: Curre
       // Skip unnamed objects
       if (!name) return;
 
-      const website = tags.website || tags['contact:website'] || tags['url'] || null;
-      const rawPhone = tags.phone || tags['contact:phone'] || tags['mobile'] || tags['contact:mobile'] || null;
-      
       const nodeLat = elem.lat || (elem.center ? elem.center.lat : lat);
       const nodeLng = elem.lon || (elem.center ? elem.center.lon : lng);
 
-      const phone = rawPhone ? rawPhone : getLocalizedPhone(nodeLat, nodeLng, params.locationName, idx);
+      // Strict Deduplication by OSM ID or name + coordinates
+      const uniqueKey = `${elem.id || `${name}-${nodeLat}-${nodeLng}`}`;
+      if (seen.has(uniqueKey)) return;
+      seen.add(uniqueKey);
+
+      const website = tags.website || tags['contact:website'] || tags['url'] || null;
+      const rawPhone = tags.phone || tags['contact:phone'] || tags['mobile'] || tags['contact:mobile'] || null;
+      const phone = rawPhone ? rawPhone : 'No phone listed';
 
       // Distance calculation (haversine)
       const distanceKm = Number(calculateHaversineDistance(lat, lng, nodeLat, nodeLng).toFixed(2));

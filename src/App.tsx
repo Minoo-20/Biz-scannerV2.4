@@ -3,7 +3,6 @@ import {
   Business, ScanParams, ScanLog, PipelineStatus 
 } from './types';
 import { fetchLiveOSMBusinesses } from './services/overpass';
-import { generateSimulatedBusinesses } from './data/presets';
 import { CurrencyCode, CURRENCIES, getRegionalEstValue, detectCurrencyForRegion } from './utils/currency';
 
 import { Navbar } from './components/Navbar';
@@ -85,37 +84,9 @@ export function App() {
       ...prev
     ]);
 
-    let rawList: Business[] = [];
-
     try {
-      rawList = await fetchLiveOSMBusinesses(scanParams, currency);
-      if (rawList.length === 0) {
-        setLogs(prev => [
-          {
-            id: `fallback-${Date.now()}`,
-            timestamp: new Date().toLocaleTimeString(),
-            message: `Overpass API returned 0 results. Switching to high-density regional simulation engine...`,
-            type: 'info'
-          },
-          ...prev
-        ]);
-        rawList = generateSimulatedBusinesses(scanParams.lat, scanParams.lng, scanParams.locationName.split(',')[0], currency);
-      }
-    } catch (error) {
-      console.warn('Overpass API restricted on production hosting. Using robust simulation fallback:', error);
-      setLogs(prev => [
-        {
-          id: `warn-${Date.now()}`,
-          timestamp: new Date().toLocaleTimeString(),
-          message: `Notice: Public OSM Overpass API rate-limited this hosting IP. Seamlessly switching to regional simulation database...`,
-          type: 'info'
-        },
-        ...prev
-      ]);
-      rawList = generateSimulatedBusinesses(scanParams.lat, scanParams.lng, scanParams.locationName.split(',')[0], currency);
-    }
+      let rawList = await fetchLiveOSMBusinesses(scanParams, currency);
 
-    try {
       // Apply category filter if specified
       if (scanParams.category !== 'all') {
         rawList = rawList.filter(b => b.category === scanParams.category);

@@ -265,7 +265,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
 
                         {/* Open Google Maps Business Profile */}
                         <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${biz.lat},${biz.lng}`}
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(biz.name + ' ' + (biz.address !== 'Local Business Area' ? biz.address + ' ' : '') + biz.city)}`}
                           target="_blank"
                           rel="noreferrer"
                           className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-all"

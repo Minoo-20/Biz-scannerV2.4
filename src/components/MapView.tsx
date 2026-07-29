@@ -178,7 +178,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
                   {/* Google Maps Business Profile Link */}
                   <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${biz.lat},${biz.lng}`}
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(biz.name + ' ' + (biz.address !== 'Local Business Area' ? biz.address + ' ' : '') + biz.city)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs rounded-lg transition-all font-medium"
