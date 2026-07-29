@@ -7,36 +7,53 @@ import { CurrencyCode } from '../utils/currency';
  * and evaluates whether they possess an official website.
  */
 export async function fetchLiveOSMBusinesses(params: ScanParams, currency: CurrencyCode = 'TND'): Promise<Business[]> {
-  const radiusMeters = Math.min(10000, Math.max(500, params.radiusKm * 1000));
-  const { lat, lng } = params;
-
-  // Overpass QL query searching for commercial nodes/ways around lat/lng
-  const query = `
-    [out:json][timeout:25];
-    (
-      node["amenity"](around:${radiusMeters},${lat},${lng});
-      node["shop"](around:${radiusMeters},${lat},${lng});
-      node["craft"](around:${radiusMeters},${lat},${lng});
-      node["office"](around:${radiusMeters},${lat},${lng});
-      way["amenity"](around:${radiusMeters},${lat},${lng});
-      way["shop"](around:${radiusMeters},${lat},${lng});
-    );
-    out center body 40;
-  `;
-
-  const url = 'https://overpass-api.de/api/interpreter';
-
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: `data=${encodeURIComponent(query)}`
-    });
+    const radiusMeters = Math.min(10000, Math.max(500, params.radiusKm * 1000));
+    const { lat, lng } = params;
 
-    if (!response.ok) {
-      throw new Error(`Overpass API response error: ${response.status}`);
+    // Overpass QL query searching for commercial nodes/ways around lat/lng
+    const query = `
+      [out:json][timeout:25];
+      (
+        node["amenity"](around:${radiusMeters},${lat},${lng});
+        node["shop"](around:${radiusMeters},${lat},${lng});
+        node["craft"](around:${radiusMeters},${lat},${lng});
+        node["office"](around:${radiusMeters},${lat},${lng});
+        way["amenity"](around:${radiusMeters},${lat},${lng});
+        way["shop"](around:${radiusMeters},${lat},${lng});
+      );
+      out center body 40;
+    `;
+
+    const endpoints = [
+      'https://overpass-api.de/api/interpreter',
+      'https://overpass.kumi.systems/api/interpreter',
+      'https://maps.mail.ru/osm/tools/overpass/api/interpreter'
+    ];
+
+    let response: Response | null = null;
+
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: `data=${encodeURIComponent(query)}`
+        });
+
+        if (res.ok) {
+          response = res;
+          break;
+        }
+      } catch (err) {
+        // Try next mirror
+      }
+    }
+
+    if (!response || !response.ok) {
+      throw new Error(`Overpass API query failed across all mirrors.`);
     }
 
     const data = await response.json();
@@ -108,7 +125,7 @@ export async function fetchLiveOSMBusinesses(params: ScanParams, currency: Curre
 
     return results;
   } catch (error) {
-    console.warn('Live OSM API call encountered issue, fallback will be used:', error);
+    console.warn('Live OSM API call encountered issue:', error);
     throw error;
   }
 }
