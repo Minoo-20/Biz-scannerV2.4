@@ -108,12 +108,13 @@ export function App() {
           {
             id: `empty-${Date.now()}`,
             timestamp: new Date().toLocaleTimeString(),
-            message: `Scan completed. No businesses found matching criteria in this viewport. Try increasing radius or searching another region.`,
+            message: `Scan timed out or server busy. Please select a smaller map area and try again.`,
             type: 'alert'
           },
           ...prev
         ]);
         setIsScanning(false);
+        setCurrentCheckingName('');
         setBusinesses([]);
         setTotalInspected(0);
         setSkippedCount(0);
@@ -170,14 +171,15 @@ export function App() {
         }
       }, 120);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       setIsScanning(false);
+      setCurrentCheckingName('');
       setLogs(prev => [
         {
           id: `err-${Date.now()}`,
           timestamp: new Date().toLocaleTimeString(),
-          message: `Error querying Overpass API. Please check your internet connection or try a smaller radius.`,
+          message: error.message || `Scan timed out or server busy. Please select a smaller map area and try again.`,
           type: 'alert'
         },
         ...prev

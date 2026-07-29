@@ -11,9 +11,9 @@ export async function fetchLiveOSMBusinesses(params: ScanParams, currency: Curre
     const radiusMeters = Math.min(10000, Math.max(500, params.radiusKm * 1000));
     const { lat, lng } = params;
 
-    // Overpass QL query searching for commercial nodes/ways around lat/lng
+    // Optimized Overpass QL query with strict 8-second timeout and 35 limit
     const query = `
-      [out:json][timeout:25];
+      [out:json][timeout:8];
       (
         node["amenity"](around:${radiusMeters},${lat},${lng});
         node["shop"](around:${radiusMeters},${lat},${lng});
@@ -22,7 +22,7 @@ export async function fetchLiveOSMBusinesses(params: ScanParams, currency: Curre
         way["amenity"](around:${radiusMeters},${lat},${lng});
         way["shop"](around:${radiusMeters},${lat},${lng});
       );
-      out center body 40;
+      out center body 35;
     `;
 
     const endpoints = [
@@ -34,26 +34,33 @@ export async function fetchLiveOSMBusinesses(params: ScanParams, currency: Curre
     let response: Response | null = null;
 
     for (const url of endpoints) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
       try {
         const res = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
           },
-          body: `data=${encodeURIComponent(query)}`
+          body: `data=${encodeURIComponent(query)}`,
+          signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (res.ok) {
           response = res;
           break;
         }
       } catch (err) {
+        clearTimeout(timeoutId);
         // Try next mirror
       }
     }
 
     if (!response || !response.ok) {
-      throw new Error(`Overpass API query failed across all mirrors.`);
+      throw new Error(`Scan timed out or server busy. Please select a smaller map area and try again.`);
     }
 
     const data = await response.json();
