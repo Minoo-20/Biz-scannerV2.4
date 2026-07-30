@@ -39,6 +39,7 @@ export const ScanControls: React.FC<ScanControlsProps> = ({
       const data = await res.json();
       if (data && data.length > 0) {
         setSuggestions(data);
+        handleSelectSuggestion(data[0]);
       } else {
         alert('Location not found. Try another city name.');
         setSuggestions([]);

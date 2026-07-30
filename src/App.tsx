@@ -205,6 +205,7 @@ export function App() {
           lng
         };
         setParams(newParams);
+        setSelectedBusinessId(undefined);
         setIsLocating(false);
         setLogs(prev => [
           {
@@ -225,6 +226,7 @@ export function App() {
   };
 
   const handleStartScan = () => {
+    setSelectedBusinessId(undefined);
     runLiveScan(params);
   };
 
@@ -244,6 +246,7 @@ export function App() {
 
   const handleResetData = () => {
     setBusinesses([]);
+    setSelectedBusinessId(undefined);
     setTotalInspected(0);
     setSkippedCount(0);
     setTargetsFound(0);
@@ -303,6 +306,9 @@ export function App() {
         <ScanControls
           params={params}
           onChangeParams={(newParams) => {
+            if (newParams.lat !== params.lat || newParams.lng !== params.lng || newParams.locationName !== params.locationName) {
+              setSelectedBusinessId(undefined);
+            }
             setParams(newParams);
           }}
           onStartScan={handleStartScan}
