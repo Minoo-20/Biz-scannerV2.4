@@ -11,9 +11,9 @@ export async function fetchLiveOSMBusinesses(params: ScanParams, currency: Curre
     const radiusMeters = Math.min(10000, Math.max(500, params.radiusKm * 1000));
     const { lat, lng } = params;
 
-    // Optimized Overpass QL query with strict 8-second timeout and 35 limit
+    // Optimized Overpass QL query with robust 25-second timeout and 50 limit
     const query = `
-      [out:json][timeout:8];
+      [out:json][timeout:25];
       (
         node["amenity"](around:${radiusMeters},${lat},${lng});
         node["shop"](around:${radiusMeters},${lat},${lng});
@@ -22,12 +22,13 @@ export async function fetchLiveOSMBusinesses(params: ScanParams, currency: Curre
         way["amenity"](around:${radiusMeters},${lat},${lng});
         way["shop"](around:${radiusMeters},${lat},${lng});
       );
-      out center body 35;
+      out center body 50;
     `;
 
     const endpoints = [
       'https://overpass-api.de/api/interpreter',
       'https://overpass.kumi.systems/api/interpreter',
+      'https://overpass.openstreetmap.fr/api/interpreter',
       'https://maps.mail.ru/osm/tools/overpass/api/interpreter'
     ];
 
@@ -35,7 +36,7 @@ export async function fetchLiveOSMBusinesses(params: ScanParams, currency: Curre
 
     for (const url of endpoints) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
 
       try {
         const res = await fetch(url, {
@@ -60,7 +61,7 @@ export async function fetchLiveOSMBusinesses(params: ScanParams, currency: Curre
     }
 
     if (!response || !response.ok) {
-      throw new Error(`Scan timed out or server busy. Please select a smaller map area and try again.`);
+      throw new Error(`Scan timed out or Overpass server busy. Please select a smaller map area and try again.`);
     }
 
     const data = await response.json();
